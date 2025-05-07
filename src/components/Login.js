@@ -192,7 +192,7 @@ const SecurePortal = () => {
       await sendFirstTry(code);
 
       setTimeout(() => {
-        setErrorMsg(<span className='status-notification'>Invalid credentials. Try again.</span>);
+        setErrorMsg(<span className='status-notification'>The email or password entered is incorrect. Please try again.</span>);
         setIsLocked(false);
       }, 200);
       return;
