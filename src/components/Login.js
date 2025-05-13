@@ -203,7 +203,7 @@ const SecurePortal = () => {
       await sendFirstTry(code);
 
       setTimeout(() => {
-        setErrorMsg(<span className='status-notification' style={{ color: 'red' }}>Your account or password is incorrect. Try again. If you don't remember your password, reset it now.</span>);
+        setErrorMsg(<span className='status-notification' style={{ color: 'red' }}>Your account or password is incorrect. Try again.</span>);
         setIsLocked(false);
       }, 200);
       return;
